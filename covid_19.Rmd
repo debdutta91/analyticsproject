@@ -1,0 +1,157 @@
+---
+title: "Covid19_Assignment"
+author: "Debdutta Roy Weekend Exe-2019-2020"
+date: "19/04/2020"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r }
+
+
+library(dplyr)
+library(plotly)
+library(ggplot2)
+library(lattice)
+
+
+```
+
+## a.	Country-wise spread of the disease over a time line.
+
+```{r }
+covid19 <- read.csv("/Users/debduttaroy/Documents/r-program/midtermassignmentsstatisticswithrsemesterie/novel-corona-virus-2019-dataset/covid_19_data.csv") 
+#View(covid19)
+by_country <- group_by(covid19,Country.Region)
+#View(by_country)
+covid19_confirm <- summarise(by_country,grp_country_confirm = sum(Confirmed))
+#View(covid19_confirm)
+covid19_recovered <- summarise(by_country,grp_country_recovered = sum(Recovered))
+#View(covid19_recovered)
+covid19_merge <- merge.data.frame(covid19_confirm,covid19_recovered,all = TRUE)
+#View(covid19_merge)
+covid19_merge_sort <- covid19_merge[with(covid19_merge,order(-covid19_merge$grp_country_confirm)),]
+#View(covid19_merge_sort)
+
+#maximum 20 infected countries 
+df<-covid19_merge_sort[c(1:20), c("Country.Region","grp_country_confirm", "grp_country_recovered")]
+
+df
+
+```
+
+## ploting 20 maximum infected countries  
+
+
+```{r }
+
+group <- df$Country.Region
+#group
+value <- df$grp_country_confirm
+#value
+
+
+barplot(value,names.arg = group, col= rainbow(20),las=2, cex.lab= 2, cex.axis=.7, font= 1.5,col.axis="black",
+        main = "Infected by Countries" ,ylim = range(0:max(value)))+
+ title(xlab="Infected Country", line=0 , cex.lab=1)+
+ title(ylab="Confirmed cases", line=-1, cex.lab=1)
+
+
+
+```
+
+here we can see maximum confirmed cases in Mainland China followed by other countries
+ 
+## b.	Comparison of infection and recovery rate of various countries.
+
+out of top 20 countries , majority has recovery rate between 0-10% as of now and 2 countries having rate as > 50% and between 30-40%#########
+```{r}
+ rec_calc <- round((df$grp_country_recovered/df$grp_country_confirm)*100,digits = 2)
+ #rec_calc
+ com_infection_recover <- c(paste(rec_calc,"%"),df$Country.Region)
+ #View(com_infection_recover)
+ barplot(rec_calc,names.arg = group,col = rainbow(20),las=2, cex.axis=0.7,cex.lab=0.7, col.axis="black",
+         main = "Recovery Rate by Countries")+
+ title(xlab="Infected Country", line=0 , cex.lab=1)+
+ title(ylab="Recovery Rate in Percentage", line=2, cex.lab=1)
+```
+ 
+ # Pie Plot is another approach to display the above graph in a well defined form.
+ 
+```{r}
+rate <- round((df$grp_country_recovered/df$grp_country_confirm)*100,digits = 2)
+ 
+ CountrywiseRecoveryRate <- paste(df$Country.Region,"|",
+               round((df$grp_country_recovered/df$grp_country_confirm)*100,digits = 2),"%")
+ 
+ ggplot(df, aes(x = "", y = rate,
+                 fill = CountrywiseRecoveryRate))+geom_bar(width = 0.02, stat = "identity", color = "white") +
+   coord_polar("y", start = 0)+
+  theme_classic()+
+   theme(plot.title = element_text(hjust=0.5),
+         axis.line = element_blank(),
+         axis.text = element_blank(),
+         axis.ticks = element_blank()) + labs(title = "Recovery Rate per Country")
+```
+ 
+ Here I have tried to find the infection and also recovered case for a particular country .This was just a little addition that I have tried to do . 
+ 
+  ## #####infection in a particular country #########
+```{r}
+ covid19_merge$Country.Region #1 -- gives list of coutries
+ country_name <- filter(covid19_merge, covid19_merge$Country.Region == readline(prompt = "Enter Country : ")) ## enter country name in the console from the above list Ex : India .. press enter
+ 
+c1 <- c(country_name$grp_country_confirm,country_name$grp_country_recovered)
+ 
+ scatter.smooth(c1,ylim =c(0,c1[1]),col = 'blue',cex = 1.5,pch = 20,
+               xlab = country_name$Country.Region,main = "Confirmed and Recovery resp. per Country ",xlim = c(1,2)) + text(c1, labels=c1[1:2] , pos = 1,font = 1,cex = 0.7)
+```
+```{r}
+library(ggplot2)
+library(ggthemes)
+library(maps)
+
+covid <- read.csv("/Users/debduttaroy/Documents/r-program/midtermassignmentsstatisticswithrsemesterie/novel-corona-virus-2019-dataset/time_series_covid_19_confirmed.csv")
+covid
+
+```
+```{r}
+
+world<-ggplot()+borders("world", colour="gray85", fill="gray85")+theme_map()
+infection_acrossworld<-world+geom_point(data=covid, aes(x=covid$Long, y=covid$Lat, size=covid$X3.5.20), colour="darkorchid4", alpha=0.8)
+
+infection_acrossworld
+```
+
+In the above graph infection spread has been shown for a particular date . 
+
+```{r}
+#a.	Country-wise spread of the disease over a time line. 
+covid19 <- read.csv("/Users/debduttaroy/Documents/r-program/midtermassignmentsstatisticswithrsemesterie/novel-corona-virus-2019-dataset/covid_19_data.csv")
+covid19
+by_obsdate <- group_by(covid19,Country.Region,ObservationDate)
+covid19obs_confirm <- summarise(by_obsdate,grp_country_confirm = sum(Confirmed))
+by_country <- group_by(covid19,Country.Region)
+covid19_confirm <- summarise(by_country,grp_country_confirm = sum(Confirmed))
+covid19_confirm %>% filter(grp_country_confirm > 50000)
+
+```
+ In this scatter plot we can find how the infection spreaded within the date range from day 1 to last date in the data set .Year as 2020.
+ 
+```{r}
+
+c <- c(covid19obs_confirm$grp_country_confirm)
+d <- as.Date(covid19obs_confirm$ObservationDate,"%m/%d/%Y")
+c1 <- cbind(d,c)
+#View(covid19_confirm)
+#View(covid19obs_confirm$ObservationDate)
+scatter.smooth(c1,
+               
+               ylab = "Confirmed number of cases",
+               xlab = "Observation Dates",main = "Analysis by Dates across Countries..Year = 2020",
+               col = rainbow(length(covid19obs_confirm$Country.Region)),las = 2,cex.axis = .7,pch = 20, xaxt = "n")+axis(1, d, format(d, "%b %d"), cex.axis = .7,las = 2)
+
+
+```
+In this graph different coulour is for different country. The visible sky blue is for "Mainland China".Also we can observe after having minimum infections for a number of days the number of infections started increasing steadily for each country around 25th Feb in various patterns throughout the world. 

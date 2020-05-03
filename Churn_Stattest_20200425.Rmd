@@ -1,0 +1,155 @@
+---
+title: "Churn Dataset Assignment"
+author: "Debdutta Roy Weekend Ex - 2019-2020"
+date: "19/04/2020"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+##title: "Churn Dataset"
+
+```{r}
+library(modeest)
+library(ggplot2)
+library(ppcor)
+library(corrplot)
+churn <- read.csv("/Users/debduttaroy/Documents/r-program/midtermassignmentsstatisticswithrsemesterie/churn.csv")
+#View(churn)
+summary(churn)
+
+
+```
+
+#Ques a.	Describe the dataset using measures of central tendency and dispersion.
+
+
+#VISUALIZATIONS with description of Central tendency
+```{r echo=TRUE}
+
+hist(churn$VMail.Message,col = 'blue',xlab = "VMail.Message",main = "No of Voice Mail Messages" )
+
+```
+```{r}
+
+hist(churn$Day.Mins,breaks = 28,col = 'blue', xlab = "Day.Mins",main = "Total Day Minutes Used")
+mean(churn$Day.Mins)
+median(churn$Day.Mins)
+mfv(churn$Day.Mins)
+sd(churn$Day.Mins)
+
+
+```
+
+```{r}
+hist(churn$Day.Calls,col = 'blue',xlab = "Day.Calls",main = "Total No of Day Calls")
+
+mean(churn$Day.Calls)
+median(churn$Day.Calls)
+mfv(churn$Day.Calls)
+sd(churn$Day.Calls)
+
+```
+
+```{r}
+hist(churn$Day.Charge,col = 'blue',xlab = "Day.Charge",main = "Total Day Charge")
+mean(churn$Day.Charge)
+median(churn$Day.Charge)
+mfv(churn$Day.Charge)
+
+
+```
+
+```{r}
+hist(churn$CustServ.Calls,col = 'blue',xlab = "Custserv.Calls",main = "Total No. of Customer Service Call made")
+
+```
+
+```{r}
+
+plot(churn$Int.l.Plan,col = 'red'  , xlab = "International Plan",main ="International Plan Subscribed")
+
+```
+
+```{r}
+plot(churn$VMail.Plan,col = 'red',xlab = "Voice mail Plan",main = "Voice mail Plan")
+
+```
+
+```{r}
+plot(churn$Churn.,col = 'red', main = "No. of Churner and Non-Churner",xlab = "Churners")
+```
+
+# Call to cust care vs churning
+
+```{r}
+churn.1 <- table(churn$Churn.,churn$Intl.Calls) 
+churn.2 <- data.frame( churn$Churn.,churn$Intl.Calls) 
+churned <- churn$Churn.
+calls <- churn$Intl.Calls
+Iplan <- churn$Int.l.Plan
+Vplan <- churn$VMail.Plan
+Ccalls <- churn$CustServ.Calls
+Icharge <- churn$Intl.Charge
+fill <- c("darkorchid4","gold")
+fill1 <- c("chocolate1","bisque2")
+fill2 <- c("deepskyblue","darkslategray1")
+fill3 <- c("darkorchid2","plum2")
+fill4 <- c("darkorchid3",'gold2')
+Int.plan <- data.frame (churn$Churn.,churn$Int.l.Plan)
+
+Vmail.plan <- data.frame(churn$Churn.,churn$VMail.Plan)
+CustCall <- data.frame(churn$Churn., churn$CustServ.Calls)  
+Ichargedf <- data.frame(churn$Churn., churn$Intl.Charge) 
+```
+
+# Plots
+```{r}
+ggplot(data = Int.plan)+geom_bar(aes(x=Iplan , fill = churned))+scale_y_continuous(breaks=seq(0,3000,250)) +
+  ggtitle( "Churners as per International Plan")+labs(x="Subscribed to Int Plan", y="Count of People Churned") +     
+   theme_bw() +scale_fill_manual(values =fill1)
+```
+
+```{r}
+ggplot(data = churn.2)+geom_bar(aes(x=calls , fill = churned))+
+  scale_x_continuous(breaks=seq(0,20,1))   +scale_y_continuous(breaks=seq(0,700,50))     +  ggtitle( "Churners as per International Call") +
+  theme_bw() +labs(x="Number of Calls", y="Count of People Churned") + scale_fill_manual(values =fill)
+mean(churn.2$churn.Intl.Calls)
+
+```
+
+```{r}
+ggplot(data = Vmail.plan)+geom_bar(aes(x=Vplan ,fill = churned ))+
+  scale_y_continuous(breaks=seq(0,2500,250)  )   +  ggtitle( "Churners as per Voicemail Plan") +
+  theme_bw() +labs(x="Subscribed to Voice Mail", y="Count of People Churned") + scale_fill_manual(values =fill2)
+```
+
+
+```{r}
+
+ggplot(data = CustCall)+geom_bar(aes(x=Ccalls ,fill = churned ))+scale_x_continuous(breaks=seq(0,10,1)  ) +
+  scale_y_continuous(breaks=seq(0,1200,200)  )   +  ggtitle( "Churners as per Customer Care Calls") +
+  theme_bw() +labs(x="No.of times called to CustCare", y="Count of People Churned") + scale_fill_manual(values =fill3)
+```
+## Plot to show the correlation in churn dataset
+```{r}
+str(churn)
+churn.1 <- data.frame(churn[,c(-1:-6,-20,-21)])
+cor(churn.1)
+churn.2 = ifelse(churn$Churn.=='True.',1,0)
+churn.mod <- as.data.frame(cbind(churn.1,churn.2))
+
+plot.cor <-  cor(churn.mod)
+
+corrplot(plot.cor, tl.cex = 0.6/par("cex"),
+    cl.cex = 0.6/par("cex"),method = 'pie')
+
+
+
+```
+
+
+```{r}
+summary(lm(churn.mod$churn.2 ~ churn.mod$VMail.Message+churn.mod$Day.Charge+churn.mod$Day.Mins))
+```
+

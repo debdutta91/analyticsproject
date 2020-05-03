@@ -1,0 +1,134 @@
+---
+title: "Mission Hospital"
+author: "Debdutta Roy Exe-Weekend 2019-2020"
+date: "18/04/2020"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+
+```{r }
+
+library(readxl)  # install.packages("readxl") or install.packages("tidyverse")
+
+library(plyr)
+
+library(tibble)
+#install.packages("Hmisc")
+library("Hmisc")
+#install.packages("corrplot")
+library(corrplot)
+library(ppcor)
+library(MASS)
+
+xl_data <- "/Users/debduttaroy/Documents/r-program/midtermassignmentsstatisticswithrsemesterie/IMB529-XLS-ENG.xlsx"
+library(stats)
+
+
+excel_sheets(path = xl_data)
+mh_data <- read_excel(path = xl_data, sheet = "MH-Raw Data") 
+#View(mh_data)
+mh_mod_data <- read_excel(path = xl_data, sheet = "MH-Modified Data") 
+#View(mh_mod_data)
+
+str(mh_mod_data)
+
+
+```
+##summary of the Modified Sheet Data
+
+```{r}
+summary(mh_mod_data)
+```
+
+##Plotted a graph to show patient arriving with different ailments 
+
+```{r}
+mod.df <- data.frame(mh_mod_data$`KEY COMPLAINTS -CODE`)
+plot(mod.df,las = 2,cex.axis = .7,cex = .7,main = "Key Complaints",ylim = c(0,60) ,  col=c(1:13))
+#majority patient admitted for other heart disease
+
+```
+
+## Modification of the dataset to get correlation between different variables. All fields having character values has other datatypes have been excluded
+
+
+```{r}
+copy_mh <- data.frame(mh_mod_data)
+copy_mh$PAST.MEDICAL.HISTORY.CODE[is.na(copy_mh$PAST.MEDICAL.HISTORY.CODE)] <- "None"
+
+copy_mh$PAST.MEDICAL.HISTORY.CODE <- as.factor(copy_mh$PAST.MEDICAL.HISTORY.CODE)
+copy_mod_mh <- copy_mh[,c(-1,-4,-6,-8:-20,-28:-33,-38,-39,-41,-43,-45,-50)] #all categorical variables are not considered
+
+copy_mod_mh_na<-na.omit(copy_mod_mh)
+#View(copy_mod_mh_na)
+
+copy_mod_mh_na$BP.LOW <- as.numeric(copy_mod_mh_na$BP.LOW)
+copy_mod_mh_na.1 <- data.frame(copy_mod_mh_na[,c(-2:-4,-11,-15:-17)])
+copy_mod_mh_na.2 <- data.frame(copy_mod_mh_na.1[,c(-15)])
+str(copy_mod_mh_na.2)
+
+cor_mhdata <- cor(copy_mod_mh_na.2)
+cor_mhdata
+
+
+```
+##To get highly correlated data 
+
+```{r}
+corrplot(cor_mhdata, tl.cex = 0.6/par("cex"),
+    cl.cex = 0.6/par("cex"))
+```
+
+##From plot we can find high correlation between BP-High to Age
+```{r}
+
+highly_correlated <- findCorrelation(cor_mhdata , cutoff = 0.6 , names = TRUE)
+print(highly_correlated)
+
+
+```
+
+## Regression between two of the highly correlated variables
+
+```{r}
+mission.1 <-lm(copy_mod_mh_na.2$TOTAL.COST.TO.HOSPITAL ~ copy_mod_mh_na.2$AGE)
+mission.1$coefficients
+
+plot(copy_mod_mh_na.2$AGE,copy_mod_mh_na.2$TOTAL.COST.TO.HOSPITAL,main = "Total Cost towards Age", xlab = "Age",ylab = "Total cost to Hospital",col = "blue",pch = 20 ) + abline (mission.1$coefficients,col = "red")
+
+```
+
+## Regression between two of the correlated variables.
+
+```{r}
+mission.2 <-lm(copy_mod_mh_na.2$TOTAL.COST.TO.HOSPITAL ~ copy_mod_mh_na.2$TOTAL.LENGTH.OF.STAY)
+mission.2$coefficients
+
+plot(copy_mod_mh_na.2$TOTAL.LENGTH.OF.STAY ,copy_mod_mh_na.2$TOTAL.COST.TO.HOSPITAL,main = "Total Cost to Total stay", xlab = "Total length of stay including ICU",ylab = "Total cost to Hospital",col = "blue",pch = 20 ) + abline (mission.2$coefficients,col = "red")
+
+
+```
+```{r}
+wt <- copy_mod_mh_na.2$BODY.HEIGHT/100
+bmi <- copy_mod_mh_na.2$BODY.WEIGHT/(wt)^2
+
+copy_mod_mh_na.3 <- cbind(copy_mod_mh_na.2,bmi)
+
+summary(lm(copy_mod_mh_na.3$TOTAL.COST.TO.HOSPITAL ~ copy_mod_mh_na.3$AGE+copy_mod_mh_na.3$bmi+copy_mod_mh_na.3$TOTAL.LENGTH.OF.STAY+copy_mod_mh_na.3$BP..HIGH+copy_mod_mh_na.3$CREATININE),data = copy_mod_mh_na.3)
+
+
+```
+
+## Anova between different variables to Total cost to Hospital
+
+```{r}
+summary(aov(copy_mod_mh_na.3$TOTAL.COST.TO.HOSPITAL ~ copy_mod_mh_na.3$AGE+copy_mod_mh_na.3$bmi+copy_mod_mh_na.3$TOTAL.LENGTH.OF.STAY+copy_mod_mh_na.3$BP..HIGH+copy_mod_mh_na.3$CREATININE))
+
+```
+
+Here age and total length of stay has very less p value which means it rejects null hypothesis.
+
+
+
